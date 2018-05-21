@@ -1,5 +1,6 @@
 from twitter import Twitter, OAuth
 import tweepy
+import json
 import re
 from termcolor import colored
 from textblob import TextBlob
@@ -7,6 +8,7 @@ from paralleldots import set_api_key, get_api_key, sentiment
 import nltk
 from nltk.corpus import *
 from nltk import Counter
+global tweets
 #-----------------------------------------------------------------------------------------------------------------------
 #-----------------------------------------------------------------------------------------------------------------------
 nltk.download('stopwords')
@@ -38,7 +40,6 @@ def details():
     myaccount = api.me()
     print (colored("\n Personal Details", color='blue', attrs=['underline']))
     print 'Name: '  + myaccount.name
-    print 'Location: ' + myaccount.location
     print 'Friends: ' + str(myaccount.friends_count)
     print (colored("*****************************************************************************************"
                    "********************************************************************************************",
@@ -116,19 +117,59 @@ def get_sentiments(query):
 def llt(query):
 
     public_tweets = get_tweets(query)
-    lo = {}
-    la = {}
-    tz = {}
-    for tweet in public_tweets ['statuses']:
+    location = {}
+    language = {}
+    time_zone = {}
+    for tweet in public_tweets['statuses']:
+        loc = tweet['user']['location']
+        lang = tweet['user']['lang']
+        tz = tweet['user']['time_zone']
 
-
-        print (colored("Time Zone: ", color='red', attrs=['bold']) + tweet['user']['created_at'])
-        print (colored("Language: ", color='red', attrs=['bold']) + tweet['user']['lang'])
-        print (colored("Location: ", color='red', attrs=['bold']) + tweet['user']['location'])
-        print (colored("*****************************************************************************************"
+        if loc in location:
+            location[loc] += 1
+        else:
+            location[loc] = 1
+        if lang in language:
+            language[lang] += 1
+        else:
+            language[lang] = 1
+        if tz in time_zone:
+            time_zone[tz] += 1
+        else:
+            time_zone[tz] = 1
+    if None in time_zone:
+        del time_zone[None]
+    if '' in time_zone:
+        del time_zone['']
+    if '' in language:
+        del language['']
+    if '' in location:
+        del location['']
+    if None in location:
+        del location[None]
+    if None in language:
+        del language[None]
+    language_count = dict(Counter(language).most_common(4))
+    print (colored("language: ", color='green', attrs=['bold']))
+    print language_count
+    location_count = dict(Counter(location).most_common(4))
+    print (colored("locations: ", color='green', attrs=['bold']))
+    print location_count
+    time_zone_count = dict(Counter(time_zone).most_common(4))
+    print (colored("Time Zone: ", color='green', attrs=['bold']))
+    print time_zone_count
+    print (colored("*****************************************************************************************"
                        "********************************************************************************************",
-                       color='green'))
+                       color='magenta'))
 
+# -----------------------------------------------------------------------------------------------------------------------
+#-----------------------------------------------------------------------------------------------------------------------
+
+#RETRIVING THE TWEETS
+
+def GetSearch(query):
+    tweets = get_tweets(query)
+    print json.dumps(tweets)
 
 #-----------------------------------------------------------------------------------------------------------------------
 
@@ -206,6 +247,10 @@ def Topusage():
 def tweet_status():
     status = raw_input("Enter your new tweet: ")
     api.update_status(status)
+    print("Tweeted: {}".format(status))
+    print (colored("*****************************************************************************************"
+                   "********************************************************************************************",
+                   color='red'))
 
 #-----------------------------------------------------------------------------------------------------------------------
 
@@ -232,31 +277,34 @@ def main():
          details()
 
      elif user_choice == 2:
-        print ("Chosen to count the number of followers.")
-        user_input = raw_input("Enter the hash tag: ")
-        print "\n Maximum number of people who might have seen this has tag are: %s " % (get_num_followers(user_input))
+         user_input = raw_input("Enter the has tag: ")
+         GetSearch(user_input)
 
      elif user_choice == 3:
-         user_input = raw_input("Enter the hash tag: ")
-         get_sentiments(user_input)
+         user_input = raw_input("Enter the has tag: ")
+         print colored("Maximum number of people who might have seen this has tag are: %s ", 'green') % (
+             get_num_followers(user_input))
 
      elif user_choice == 4:
-        user_input = raw_input("Enter the hash tag: ")
-        llt(user_input)
+         user_input = raw_input("Enter the has tag: ")
+         get_sentiments(user_input)
 
      elif user_choice == 5:
-        Comparision()
+         user_input = raw_input("Enter the has tag: ")
+         llt(user_input)
 
      elif user_choice == 6:
-          Topusage()
+         Comparision()
 
      elif user_choice == 7:
-
-         tweet_status()
+         Topusage()
 
      elif user_choice == 8:
-       break
+         tweet_status()
+
+     elif user_choice == 9:
+         break
      else:
-        print("wrong choice try again.")
-        exit()
-main()
+         print("Wrong choice. Try again.")
+         exit()
+ main()
